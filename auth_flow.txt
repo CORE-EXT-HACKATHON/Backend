@@ -1,0 +1,18 @@
+1. User clicks "Login with Google" on your frontend
+   → http://localhost:3000  ← must be in JS Origins
+
+2. Google shows consent screen
+
+3. Google redirects back to your backend callback
+   → /api/auth/social/google/callback/  ← must be in Redirect URIs
+
+4. Your Django backend exchanges the code for tokens
+
+5. Django returns JWT to your frontend
+
+# Registration
+POST /register/  →  OTP sent  →  POST /verify-email/  →  JWT returned ✅
+
+# Forgot Password  
+POST /forgot-password/  →  OTP sent  →  POST /reset-password/  →  done ✅
+
