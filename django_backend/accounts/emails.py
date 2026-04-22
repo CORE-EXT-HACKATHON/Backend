@@ -1,15 +1,15 @@
-import resend
+from django.core.mail import send_mail
 from django.conf import settings
 
 
 def send_otp_email(user, code, otp_type):
     if otp_type == 'verify_email':
-        subject = "Verify your email"
+        subject = "Verify your email — Insurely"
         heading = "Email Verification"
         message = "Use the code below to verify your email address."
         note = "This code expires in 10 minutes. If you didn't create an account, ignore this email."
     else:
-        subject = "Reset your password"
+        subject = "Reset your password — Insurely"
         heading = "Password Reset"
         message = "Use the code below to reset your password."
         note = "This code expires in 10 minutes. If you didn't request a reset, ignore this email."
@@ -62,11 +62,11 @@ def send_otp_email(user, code, otp_type):
     </html>
     """
 
-    resend.api_key = settings.RESEND_API_KEY
-
-    resend.Emails.send({
-        "from": settings.DEFAULT_FROM_EMAIL,
-        "to": [user.email],
-        "subject": subject,
-        "html": html,
-    })
+    send_mail(
+        subject=subject,
+        message=f"Your OTP code is: {code}",  # plain text fallback
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        html_message=html,
+        fail_silently=False,
+    )
