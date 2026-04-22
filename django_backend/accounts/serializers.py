@@ -68,7 +68,6 @@ class VerifyEmailSerializer(serializers.Serializer):
         data['otp'] = otp
         return data
 
-
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)

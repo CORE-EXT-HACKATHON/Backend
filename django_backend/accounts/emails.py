@@ -25,23 +25,17 @@ def send_otp_email(user, code, otp_type):
             <table width="480" cellpadding="0" cellspacing="0"
                    style="background:#ffffff;border-radius:12px;overflow:hidden;
                           box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-
-              <!-- Header -->
               <tr>
                 <td style="background:#4F46E5;padding:32px;text-align:center;">
                   <h1 style="margin:0;color:#ffffff;font-size:22px;">{heading}</h1>
                 </td>
               </tr>
-
-              <!-- Body -->
               <tr>
                 <td style="padding:36px 40px;">
                   <p style="margin:0 0 8px;color:#374151;font-size:15px;">
                     Hi {user.first_name or 'there'},
                   </p>
                   <p style="margin:0 0 28px;color:#6B7280;font-size:14px;">{message}</p>
-
-                  <!-- OTP Box -->
                   <div style="background:#F3F4F6;border-radius:10px;padding:24px;
                               text-align:center;margin-bottom:28px;">
                     <p style="margin:0 0 6px;color:#6B7280;font-size:12px;
@@ -49,21 +43,17 @@ def send_otp_email(user, code, otp_type):
                     <p style="margin:0;font-size:42px;font-weight:bold;
                                letter-spacing:12px;color:#4F46E5;">{code}</p>
                   </div>
-
                   <p style="margin:0;color:#9CA3AF;font-size:12px;text-align:center;">{note}</p>
                 </td>
               </tr>
-
-              <!-- Footer -->
               <tr>
                 <td style="background:#F9FAFB;padding:20px 40px;text-align:center;
                             border-top:1px solid #E5E7EB;">
                   <p style="margin:0;color:#D1D5DB;font-size:11px;">
-                    © 2026 InsurelyAI. All rights reserved.
+                    © 2026 Insurely. All rights reserved.
                   </p>
                 </td>
               </tr>
-
             </table>
           </td>
         </tr>
