@@ -477,7 +477,7 @@ class GoogleLogin(SocialLoginView):
     """Google OAuth2 login — exchange a Google access token for JWT tokens."""
 
     adapter_class = GoogleOAuth2Adapter
-    callback_url = "http://localhost:3000"  # ← update to your frontend URL in production
+    callback_url = "http://insurelyai.vercel.app"  # ← update to your frontend URL in production
     client_class = OAuth2Client
 
     @extend_schema(
