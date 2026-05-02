@@ -32,7 +32,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'dj_rest_auth',
-    'django_ratelimit',
     'drf_spectacular',
     'drf_spectacular_sidecar',  # for Swagger UI assets
 
