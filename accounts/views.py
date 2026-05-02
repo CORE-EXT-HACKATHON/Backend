@@ -5,9 +5,15 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
-from django.utils.decorators import method_decorator
-
-from django_ratelimit.decorators import ratelimit
+from .throttles import (
+    RegisterThrottle,
+    VerifyOTPThrottle,
+    LoginThrottle,
+    ForgotPasswordThrottle,
+    ResetPasswordThrottle,
+    ResendOTPThrottle,
+    ChangePasswordThrottle
+)
 
 from drf_spectacular.utils import (
     extend_schema,
@@ -46,25 +52,13 @@ def get_tokens_for_user(user):
     }
 
 
-def ratelimit_error_response():
-    """Standard response when rate limit is exceeded."""
-    return Response(
-        {
-            "error": "Too many requests. Please wait before trying again.",
-            "code": "rate_limit_exceeded",
-        },
-        status=status.HTTP_429_TOO_MANY_REQUESTS,
-    )
-
 
 # ─── Register ─────────────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="5/h", method="POST", block=False),
-    name="post",
-)
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [RegisterThrottle]
 
     @extend_schema(
         tags=["Auth"],
@@ -95,9 +89,6 @@ class RegisterView(APIView):
         ],
     )
     def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -115,12 +106,10 @@ class RegisterView(APIView):
 
 # ─── Verify Email ─────────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="10/h", method="POST", block=False),
-    name="post",
-)
+
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [VerifyOTPThrottle]
 
     @extend_schema(
         tags=["OTP"],
@@ -145,10 +134,7 @@ class VerifyEmailView(APIView):
             )
         ],
     )
-    def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
+    def post(self, request):        
         serializer = VerifyEmailSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data["user"]
@@ -172,12 +158,10 @@ class VerifyEmailView(APIView):
 
 # ─── Login ────────────────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="10/h", method="POST", block=False),
-    name="post",
-)
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     @extend_schema(
         tags=["Auth"],
@@ -204,9 +188,7 @@ class LoginView(APIView):
         ],
     )
     def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
+        
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data["user"]
@@ -223,12 +205,10 @@ class LoginView(APIView):
 
 # ─── Forgot Password ──────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="5/h", method="POST", block=False),
-    name="post",
-)
+
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ForgotPasswordThrottle]
 
     @extend_schema(
         tags=["Password"],
@@ -253,9 +233,7 @@ class ForgotPasswordView(APIView):
         ],
     )
     def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
+        
         serializer = ForgotPasswordSerializer(data=request.data, context={})
         if serializer.is_valid():
             user = serializer.context.get("user")
@@ -271,12 +249,9 @@ class ForgotPasswordView(APIView):
 
 # ─── Reset Password ───────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="10/h", method="POST", block=False),
-    name="post",
-)
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ResetPasswordThrottle]
 
     @extend_schema(
         tags=["Password"],
@@ -305,9 +280,7 @@ class ResetPasswordView(APIView):
         ],
     )
     def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
+        
         serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data["user"]
@@ -324,12 +297,10 @@ class ResetPasswordView(APIView):
 
 # ─── Resend OTP ───────────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="3/h", method="POST", block=False),
-    name="post",
-)
+
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ResendOTPThrottle]
 
     @extend_schema(
         tags=["OTP"],
@@ -362,9 +333,7 @@ class ResendOTPView(APIView):
         ],
     )
     def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
+       
         serializer = ResendOTPSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
@@ -382,6 +351,7 @@ class ResendOTPView(APIView):
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
+
 
     @extend_schema(
         tags=["Profile"],
@@ -420,10 +390,7 @@ class ProfileView(APIView):
 
 # ─── Change Password ──────────────────────────────────────────────────────────
 
-@method_decorator(
-    ratelimit(key="ip", rate="5/h", method="POST", block=False),
-    name="post",
-)
+
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -454,9 +421,7 @@ class ChangePasswordView(APIView):
         ],
     )
     def post(self, request):
-        if getattr(request, "limited", False):
-            return ratelimit_error_response()
-
+        
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user

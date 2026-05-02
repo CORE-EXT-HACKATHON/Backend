@@ -97,9 +97,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # ← add this line
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_RATES': {
+        'register': '5/hour',
+        'verify_otp': '5/hour',
+        'login': '5/hour',
+        'forgot_password': '5/hour',
+        'reset_password': '5/hour',
+        'resend_otp': '3/hour',
+        'change_password': '5/hour',
+    }
 }
-
 
 # ─── JWT ───────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
@@ -187,17 +196,13 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-# ─── Cache & Rate Limiting ────────────────────────────────────────────────────
+# ─── Caching (using DB cache for simplicity) ─────────────────────────────────
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
     }
 }
-
-RATELIMIT_USE_CACHE = 'default'
-RATELIMIT_FAIL_OPEN = False
-
 
 # ─── Swagger / OpenAPI ─────────────────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
