@@ -189,11 +189,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ─── Security (enforced on Render/production) ──────────────────────────────────
+# ─── Security ──────────────────────────────────────────────────────────────────
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False   # ← Render handles SSL, never redirect in Django
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [
+        'https://insurelyai-backend.onrender.com',
+        'https://insurelyai.vercel.app',
+    ]
 
 # ─── Caching (using DB cache for simplicity) ─────────────────────────────────
 CACHES = {
