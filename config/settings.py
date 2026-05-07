@@ -3,6 +3,8 @@ from decouple import config
 import dj_database_url
 from datetime import timedelta
 import sys
+import os
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,7 +15,7 @@ ALLOWED_HOSTS = [
     '.onrender.com',
     'localhost',
     '127.0.0.1',
-    config('ALLOWED_HOST', default=''),
+    os.getenv('ALLOWED_HOST', default=''),
 ]
 
 INSTALLED_APPS = [
