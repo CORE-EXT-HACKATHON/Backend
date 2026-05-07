@@ -2,6 +2,7 @@ from pathlib import Path
 from decouple import config
 import dj_database_url
 from datetime import timedelta
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -12,7 +13,7 @@ ALLOWED_HOSTS = [
     '.onrender.com',
     'localhost',
     '127.0.0.1',
-    config('ALLOWED_HOST', default=''),  # your custom domain if any
+    config('ALLOWED_HOST', default=''),
 ]
 
 INSTALLED_APPS = [
@@ -33,14 +34,14 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'dj_rest_auth',
     'drf_spectacular',
-    'drf_spectacular_sidecar',  # for Swagger UI assets
+    'drf_spectacular_sidecar',
 
     'accounts',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Render static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -52,6 +53,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+WSGI_APPLICATION = 'config.wsgi.application'
 SITE_ID = 1
 
 TEMPLATES = [
@@ -70,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-# ─── PostgreSQL via Render ─────────────────────────────────────────────────────
+# ─── Database ──────────────────────────────────────────────────────────────────
 DATABASE_URL = config('DATABASE_URL', default=None)
 
 if DATABASE_URL:
@@ -78,7 +80,6 @@ if DATABASE_URL:
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
 else:
-    # Local fallback (SQLite for dev)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -87,6 +88,14 @@ else:
     }
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+# ─── Cache ─────────────────────────────────────────────────────────────────────
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
+    }
+}
 
 # ─── REST Framework ────────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
@@ -100,10 +109,10 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [],
     'DEFAULT_THROTTLE_RATES': {
         'register': '5/hour',
-        'verify_otp': '5/hour',
-        'login': '5/hour',
+        'verify_otp': '10/hour',
+        'login': '10/hour',
         'forgot_password': '5/hour',
-        'reset_password': '5/hour',
+        'reset_password': '10/hour',
         'resend_otp': '3/hour',
         'change_password': '5/hour',
     }
@@ -118,11 +127,10 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-
 # ─── Allauth ───────────────────────────────────────────────────────────────────
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'none' # OTP verification is handled separately, so we disable built-in email verification
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
@@ -139,15 +147,14 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ─── Email via Gmail SMTP ──────────────────────────────────────────────────────
+# ─── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
 
 # ─── CORS ──────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
@@ -178,7 +185,7 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-# ─── Static files (WhiteNoise) ─────────────────────────────────────────────────
+# ─── Static files ──────────────────────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -188,27 +195,20 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ─── Security (enforced on Render/production) ──────────────────────────────────
 # ─── Security ──────────────────────────────────────────────────────────────────
+# Render handles SSL termination — never redirect in Django
+SECURE_SSL_REDIRECT = False
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = False   # ← Render handles SSL, never redirect in Django
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = [
-        'https://insurelyai-backend.onrender.com',
-        'https://insurelyai.vercel.app',
+        f'https://{config("ALLOWED_HOST", default="")}',
+        config('FRONTEND_URL', default=''),
     ]
 
-# ─── Caching (using DB cache for simplicity) ─────────────────────────────────
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'cache_table',
-    }
-}
-
-# ─── Swagger / OpenAPI ─────────────────────────────────────────────────────────
+# ─── Swagger ───────────────────────────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
     'TITLE': 'InsurelyAi Auth API',
     'DESCRIPTION': '''
@@ -224,9 +224,9 @@ Full auth system with OTP verification and Google OAuth.
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
-    'SWAGGER_UI_DIST': 'SIDECAR',  
-    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',  
-    'REDOC_DIST': 'SIDECAR', 
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
     'TAGS': [
         {'name': 'Auth', 'description': 'Register, login, logout'},
         {'name': 'OTP', 'description': 'Email verification and OTP management'},
@@ -236,8 +236,16 @@ Full auth system with OTP verification and Google OAuth.
     ],
 }
 
-import sys
+# ─── Test overrides ────────────────────────────────────────────────────────────
 if 'pytest' in sys.modules or 'test' in sys.argv:
     REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
-    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
+    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+        'register': '1000/hour',
+        'verify_otp': '1000/hour',
+        'login': '1000/hour',
+        'forgot_password': '1000/hour',
+        'reset_password': '1000/hour',
+        'resend_otp': '1000/hour',
+        'change_password': '1000/hour',
+    }
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

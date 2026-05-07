@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: insurely-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: insurely-db
+          property: connectionString
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://insurelyai.vercel.app
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://insurelyai.vercel.app
+      - key: ALLOWED_HOST
+        value: insurely-backend.onrender.com
+
+databases:
+  - name: insurely-db
+    databaseName: insurely_db
+    user: insurely_user
+    plan: free
