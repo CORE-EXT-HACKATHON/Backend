@@ -6,7 +6,7 @@ services:
     plan: free
     envVars:
       - key: SECRET_KEY
-        generateValue: true
+        sync: false
       - key: DEBUG
         value: "False"
       - key: DATABASE_URL
